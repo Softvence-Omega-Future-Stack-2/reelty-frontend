@@ -1,0 +1,119 @@
+import { Link } from "react-router";
+import newtemplateImage from "../../../assets/images/dashboard/brandtemp/newtempicon.png";
+import MaxWidthWrapper from "../../../components/wrappers/MaxWidthWrapper";
+import { useDeleteTemplateMutation, useGetTemplatesListQuery } from "../../../features/template/templateApi";
+import { useState } from "react";
+import { AiOutlineDelete } from "react-icons/ai";
+import { toast } from "react-toastify";
+
+const BrandTemplate = () => {
+  // Fetch templates from backend
+  const { data, isLoading } = useGetTemplatesListQuery({ page: 1, limit: 20 });
+const [deleteTemplate]  = useDeleteTemplateMutation();
+  const [hoveredTemplateId, setHoveredTemplateId] = useState<number | null>(null);
+
+  const handleDelete =async (id: number) => {
+  try {
+    const res = await deleteTemplate(id).unwrap();
+    toast.success(res.message || "Template deleted successfully!")
+    
+  } catch (error) {
+    toast.error("Failed to delete template.")
+  }
+  };
+
+if (isLoading) {
+  return (
+    <div className="flex items-center justify-center min-h-[300px]">
+      <div className="flex space-x-2">
+        <span className="w-4 h-4 bg-red-500 rounded-full animate-bounce delay-0"></span>
+        <span className="w-4 h-4 bg-red-500 rounded-full animate-bounce delay-150"></span>
+        <span className="w-4 h-4 bg-red-500 rounded-full animate-bounce delay-300"></span>
+      </div>
+    </div>
+  );
+}
+  // Map backend data to frontend template structure
+  const templates =
+    data?.data?.items.map((item: any) => ({
+      id: item.id,
+      aspect: item.aspectRatio,
+      title: item.templateName,
+      selected: item.isDefault,
+      overlayLogo: item.overlayLogo,
+      introVideo: item.introVideo,
+      outroVideo: item.outroVideo,
+    })) || [];
+
+  return (
+    <div className="text-white py-10">
+      <MaxWidthWrapper>
+        {/* Title & Info */}
+        <h1 className="text-2xl font-semibold mb-2">Brand Templates</h1>
+ 
+
+        {/* Templates Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {templates.map((template: any) => (
+            <div
+              key={template.id}
+              className="flex flex-col gap-4 relative group"
+              onMouseEnter={() => setHoveredTemplateId(template.id)}
+              onMouseLeave={() => setHoveredTemplateId(null)}
+            >
+              {/* Delete Icon */}
+              {hoveredTemplateId === template.id && (
+                <button
+                  onClick={() => handleDelete(template.id)}
+                  className="absolute top-2 right-2 text-red-500 hover:text-red-700 z-10"
+                  title="Delete Template"
+                >
+                  <AiOutlineDelete size={20} />
+                </button>
+              )}
+
+              <div
+                className={`rounded-xl p-4 flex flex-col gap-3 ${
+                  template.selected
+                    ? "border-2 border-blue-500"
+                    : "border border-[#27272A]"
+                } bg-[#27272A]`}
+              >
+                <p className="text-sm">{template.aspect}</p>
+                <h3 className="uppercase text-xl text-center">
+                  <span>Choose a </span>
+                  <span className="font-bold text-red-500">Template</span>
+                </h3>
+                <div className="flex items-center justify-between w-full">
+                  <p className="text-white/50 text-sm">logo, intro, and more...</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                {template.selected && (
+                  <div className="py-1 px-3 rounded-full text-white text-xs bg-[#27272A]">
+                    Default
+                  </div>
+                )}
+                <p className="text-sm">{template.title}</p>
+              </div>
+            </div>
+          ))}
+
+          {/* Create New Template */}
+          <Link
+            to={"/dashboard/create-template"}
+            className="bg-[#27272A] border h-32 border-dashed border-red-500 rounded-md p-4 flex flex-col justify-center items-center cursor-pointer hover:border-red-400 transition"
+          >
+            <div className="w-full rounded-md flex justify-center items-center">
+              <img src={newtemplateImage} alt="" />
+            </div>
+            <p className="text-xs text-gray-300 mt-2">Create new template</p>
+          </Link>
+        </div>
+      </MaxWidthWrapper>
+    </div>
+  );
+};
+
+export default BrandTemplate;
